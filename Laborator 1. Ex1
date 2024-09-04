@@ -1,0 +1,78 @@
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ActionsService {
+  text_content$: BehaviorSubject<string> = new BehaviorSubject('');
+  encryption_key$: BehaviorSubject<string> = new BehaviorSubject('');
+  text_changed_content$: BehaviorSubject<string> = new BehaviorSubject('');
+  alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+    'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+  constructor() {
+  }
+
+  encryptText(): void {
+    let cipher: string[] = [];
+    let password = Number(this.encryption_key$.getValue());
+
+    let message = this.text_content$.getValue();
+
+    let regex = /^[a-zA-Z\s]*$/
+    if (regex.test(message)) {
+
+      if (password >= 1 && password <= 25) {
+        message = message.replace(/\s/g, '').toUpperCase();
+        cipher = [...message];
+
+        for (let i = 0; i < message.length; i++) {
+          const currentChar = message[i];
+          const currentIndex = this.alphabet.indexOf(currentChar);
+
+          if (currentIndex !== -1) {
+            let newIndex = (currentIndex + password) % 26;
+            cipher[i] = this.alphabet[newIndex];
+          } else {
+            cipher[i] = currentChar;
+          }
+        }
+        this.text_changed_content$.next(cipher.join(''))
+      } else {
+        this.text_changed_content$.next("Invalid password: It should be a number between 1 and 25.");
+      }
+    } else {
+      this.text_changed_content$.next("Text should contain only spaces and letters.");
+    }
+
+  }
+
+  decryptText(): void {
+    let decryptedMessage: string[] = [];
+
+    let password = Number(this.encryption_key$.getValue());
+    let cipher = this.text_content$.getValue();
+
+    if (password >= 1 && password <= 25) {
+      cipher = cipher.replace(/\s/g, '').toUpperCase();
+      decryptedMessage = [...cipher];
+
+      for (let i = 0; i < cipher.length; i++) {
+        const currentChar = cipher[i];
+        const currentIndex = this.alphabet.indexOf(currentChar);
+
+        if (currentIndex !== -1) {
+          let newIndex = (currentIndex - password + 26) % 26;
+          decryptedMessage[i] = this.alphabet[newIndex];
+        } else {
+          decryptedMessage[i] = currentChar;
+        }
+      }
+
+      this.text_changed_content$.next(decryptedMessage.join(''))
+    } else {
+      this.text_changed_content$.next("Invalid password: It should be a number between 1 and 25.");
+    }
+  }
+}
