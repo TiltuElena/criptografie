@@ -1,1 +1,1 @@
-# criptografie
+# Laboratoare la Criptografie
