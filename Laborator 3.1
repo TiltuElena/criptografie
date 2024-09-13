@@ -1,0 +1,218 @@
+import {Injectable} from '@angular/core';
+import {BehaviorSubject} from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ActionsService {
+  text_content$: BehaviorSubject<string> = new BehaviorSubject('');
+  encryption_key$: BehaviorSubject<string> = new BehaviorSubject('');
+  text_changed_content$: BehaviorSubject<string> = new BehaviorSubject('');
+  alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+    'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+  constructor() {}
+
+  encryptText(): void {
+    let password = this.encryption_key$.getValue();
+    let message = this.text_content$.getValue();
+    let cypher = []
+
+    let upperText = message.toUpperCase().replace(/[^a-zA-Z0-9]/g, '').replace('J', 'I')
+    console.log(upperText)
+
+    let result = [];
+    let i = 0;
+
+    while (i < upperText.length) {
+      let first = upperText[i];
+      let second = upperText[i + 1];
+
+      if (!second) {
+        result.push(first + 'Z');
+        break;
+      }
+
+      if (first === second) {
+        result.push(first + 'Z');
+        i += 1;
+      } else {
+        result.push(first + second);
+        i += 2;
+      }
+    }
+
+    let password_uniques = new Set(password.split(""))
+    password = [...password_uniques].join("").toUpperCase().replace(/[^a-zA-Z0-9]/g, '')
+    console.log(password)
+
+    let array: any = []
+
+    for (let i = 0; i < password.length; i++) {
+      array.push(password[i]);
+    }
+
+      this.alphabet.forEach((letter: any) => {
+        if (!array.includes(letter)) {
+          array.push(letter);
+        }
+      })
+
+    let matrix: any = [];
+
+    for (let i = 0, k = -1; i < array.length; i++) {
+      if (i % 5 === 0) {
+        k++;
+        matrix[k] = [];
+      }
+      matrix[k].push(array[i]);
+    }
+
+    console.log(matrix)
+
+    for(let i = 0; i < result.length; i++) {
+      let firstCharOfPair = result[i][0]
+      let secondCharOfPair = result[i][1]
+
+      let firstCharPos = [-1, -1]
+      let secondCharPos = [-1, -1]
+
+      for (let row = 0; row < matrix.length; row++) {
+        // Loop through the columns of each row
+        for (let col = 0; col < matrix[row].length; col++) {
+          if (matrix[row][col] === firstCharOfPair) {
+            firstCharPos = [row, col]
+          } else if (matrix[row][col] === secondCharOfPair) {
+            secondCharPos = [row, col]
+          }
+        }
+      }
+
+      if(firstCharPos[0] === secondCharPos[0]) {
+
+        if(firstCharPos[1]+ 1 > 4){
+          cypher.push(matrix[firstCharPos[0]][0])
+        } else {
+          cypher.push(matrix[firstCharPos[0]][firstCharPos[1]+1])
+        }
+
+        if(secondCharPos[1]+ 1 > 4){
+          cypher.push(matrix[firstCharPos[0]][0])
+        } else {
+          cypher.push(matrix[secondCharPos[0]][secondCharPos[1]+1])
+        }
+
+
+      } else if(firstCharPos[1] === secondCharPos[1]){
+
+        if(firstCharPos[0]+ 1 > 4){
+          cypher.push(matrix[0][firstCharPos[1]])
+        } else {
+          cypher.push(matrix[firstCharPos[0] + 1][firstCharPos[1]])
+        }
+
+        if(secondCharPos[0]+ 1 > 4){
+
+          cypher.push(matrix[0][secondCharPos[1]])
+        } else {
+          cypher.push(matrix[secondCharPos[0] + 1][secondCharPos[1]])
+        }
+      } else {
+        cypher.push(matrix[firstCharPos[0]][secondCharPos[1]])
+        cypher.push(matrix[secondCharPos[0]][firstCharPos[1]])
+      }
+    }
+
+    this.text_changed_content$.next(cypher.join(''));
+  }
+
+  decryptText(): void {
+    let password = this.encryption_key$.getValue();
+    let message = this.text_changed_content$.getValue();
+    let cypher = [];
+
+    let password_uniques = new Set(password.split(""));
+    password = [...password_uniques].join("").toUpperCase().replace(/[^a-zA-Z0-9]/g, '');
+    console.log(password);
+
+    let array: any = [];
+
+    for (let i = 0; i < password.length; i++) {
+      array.push(password[i]);
+    }
+
+    this.alphabet.forEach((letter: any) => {
+      if (!array.includes(letter)) {
+        array.push(letter);
+      }
+    });
+
+    let matrix: any = [];
+
+    for (let i = 0, k = -1; i < array.length; i++) {
+      if (i % 5 === 0) {
+        k++;
+        matrix[k] = [];
+      }
+      matrix[k].push(array[i]);
+    }
+
+    console.log(matrix);
+
+    let result: string[] = [];
+    let i = 0;
+
+    while (i < message.length) {
+      let firstCharOfPair = message[i];
+      let secondCharOfPair = message[i + 1];
+
+      let firstCharPos = [-1, -1];
+      let secondCharPos = [-1, -1];
+
+      for (let row = 0; row < matrix.length; row++) {
+        for (let col = 0; col < matrix[row].length; col++) {
+          if (matrix[row][col] === firstCharOfPair) {
+            firstCharPos = [row, col];
+          } else if (matrix[row][col] === secondCharOfPair) {
+            secondCharPos = [row, col];
+          }
+        }
+      }
+
+      if (firstCharPos[0] === secondCharPos[0]) {
+        if (firstCharPos[1] - 1 < 0) {
+          result.push(matrix[firstCharPos[0]][4]);
+        } else {
+          result.push(matrix[firstCharPos[0]][firstCharPos[1] - 1]);
+        }
+
+        if (secondCharPos[1] - 1 < 0) {
+          result.push(matrix[secondCharPos[0]][4]);
+        } else {
+          result.push(matrix[secondCharPos[0]][secondCharPos[1] - 1]);
+        }
+
+      } else if (firstCharPos[1] === secondCharPos[1]) {
+        if (firstCharPos[0] - 1 < 0) {
+          result.push(matrix[4][firstCharPos[1]]);
+        } else {
+          result.push(matrix[firstCharPos[0] - 1][firstCharPos[1]]);
+        }
+
+        if (secondCharPos[0] - 1 < 0) {
+          result.push(matrix[4][secondCharPos[1]]);
+        } else {
+          result.push(matrix[secondCharPos[0] - 1][secondCharPos[1]]);
+        }
+
+      } else {
+        result.push(matrix[firstCharPos[0]][secondCharPos[1]]);
+        result.push(matrix[secondCharPos[0]][firstCharPos[1]]);
+      }
+
+      i += 2;
+    }
+
+    this.text_changed_content$.next(result.join(''));
+  }
+}
