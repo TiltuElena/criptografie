@@ -1,0 +1,88 @@
+import {Injectable} from '@angular/core';
+import {BehaviorSubject} from 'rxjs';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class ActionsService {
+  text_content$: BehaviorSubject<string> = new BehaviorSubject('');
+  encryption_key$: BehaviorSubject<string> = new BehaviorSubject('');
+  text_changed_content$: BehaviorSubject<string> = new BehaviorSubject('');
+  alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+    'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+
+  constructor() {
+  }
+
+  getCipherChar(p: string, c: number, encrypt: boolean) {
+    let cip: number = 0;
+    if (/[a-zA-Z]/.test(p)) {
+      let isUpperCase: boolean = p === p.toUpperCase();
+      let offset: number = isUpperCase ? 'A'.charCodeAt(0) : 'a'.charCodeAt(0);
+      if (encrypt) {
+        cip = (p.charCodeAt(0) + c - offset) % 26;
+      } else {
+        cip = (p.charCodeAt(0) - c - offset) % 26;
+      }
+      if (cip < 0) cip += 26;
+      cip += offset;
+    }
+
+    return cip;
+  }
+
+  encryptText(): void {
+    let cipher: string = '';
+
+    let password = this.encryption_key$.getValue();
+    let message = this.text_content$.getValue();
+    let pw: string[] = Array.from(message);
+
+    const pass = password.split('').map((char) => {
+      return this.alphabet.findIndex((char2) => char2 === char.toUpperCase());
+    });
+
+    let index = 0;
+    for (let i = 0; i < pw.length; i++) {
+      const p = pw[i];
+
+      if (p === ' ' || (p.charCodeAt(0) >= "0".charCodeAt(0) && p.charCodeAt(0) <= "9".charCodeAt(0))) {
+        console.log('miss')
+      } else {
+        pw[i] = String.fromCharCode(this.getCipherChar(p, pass[index], true));
+        console.log(pass[index])
+        index = (index + 1) % password.length;
+      }
+    }
+
+    cipher = pw.join('');
+
+    this.text_changed_content$.next(cipher);
+  }
+
+  decryptText(): void {
+    let key = this.encryption_key$.getValue();
+    let decrypted_cipher: string = this.text_content$.getValue()
+
+    const pass = key.split('').map((char) => {
+      return this.alphabet.findIndex((char2) => char2 === char.toUpperCase());
+    });
+
+    let pw: string[] = Array.from(decrypted_cipher);
+    let index = 0;
+    for (let i = 0; i < pw.length; i++) {
+      const p = pw[i];
+      if (p === ' ' || (p.charCodeAt(0) >= "0".charCodeAt(0) && p.charCodeAt(0) <= "9".charCodeAt(0))) {
+        console.log('miss')
+      } else {
+        let p: string = pw[i];
+        pw[i] = String.fromCharCode(this.getCipherChar(p, pass[index], false));
+        index = (index + 1) % key.length;
+      }
+    }
+
+    let decrypted_text: string = pw.join('');
+
+    this.text_changed_content$.next(decrypted_text);
+  }
+}
